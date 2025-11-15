@@ -8,14 +8,20 @@ class ChatHandler:
 
     def __init__(self):
         self.provider = os.getenv('AI_PROVIDER', 'anthropic').lower()
+        self.anthropic_client = None
+        self.openai_client = None
 
         if self.provider == 'anthropic':
-            self.anthropic_client = anthropic.Anthropic(
-                api_key=os.getenv('ANTHROPIC_API_KEY')
-            )
+            api_key = os.getenv('ANTHROPIC_API_KEY')
+            if not api_key:
+                raise ValueError("ANTHROPIC_API_KEY not found in environment variables")
+            self.anthropic_client = anthropic.Anthropic(api_key=api_key)
             self.model = os.getenv('ANTHROPIC_MODEL', 'claude-3-5-sonnet-20241022')
         elif self.provider == 'openai':
-            openai.api_key = os.getenv('OPENAI_API_KEY')
+            api_key = os.getenv('OPENAI_API_KEY')
+            if not api_key:
+                raise ValueError("OPENAI_API_KEY not found in environment variables")
+            self.openai_client = openai.OpenAI(api_key=api_key)
             self.model = os.getenv('OPENAI_MODEL', 'gpt-4-turbo-preview')
         else:
             raise ValueError(f"Unsupported AI provider: {self.provider}")
@@ -72,7 +78,7 @@ class ChatHandler:
         })
 
         # Call OpenAI API
-        response = openai.chat.completions.create(
+        response = self.openai_client.chat.completions.create(
             model=self.model,
             messages=messages,
             max_tokens=4096
